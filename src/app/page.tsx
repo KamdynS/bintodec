@@ -73,45 +73,49 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-900 text-gray-100">
+    <main className="min-h-screen bg-gray-900 text-gray-100 flex flex-col">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-4">Binary-Decimal Conversion Practice</h1>
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-4">
-            <BitSelector bits={bits} onBitsChange={setBits} />
-            <ConversionSelector conversionType={conversionType} onConversionTypeChange={setConversionType} />
-            <TimerSelector timer={timer} onTimerChange={setTimer} />
+      <div className="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
+        <h1 className="text-3xl font-bold mb-8">Binary-Decimal Conversion Practice</h1>
+        <div className="w-full max-w-md">
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex space-x-4">
+              <BitSelector bits={bits} onBitsChange={setBits} />
+              <ConversionSelector conversionType={conversionType} onConversionTypeChange={setConversionType} />
+              <TimerSelector timer={timer} onTimerChange={setTimer} />
+            </div>
           </div>
-          <div className="text-xl">
+          <div className="text-xl mb-8 text-center">
             Score: {score} {feedback === 'Nice!' && <span className="text-green-500 ml-2">{feedback}</span>}
           </div>
+          {!isGameActive ? (
+            <div className="text-center">
+              <button
+                onClick={startGame}
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg"
+              >
+                Start Game
+              </button>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="mb-4">Time remaining: {timer} seconds</p>
+              <p className="mb-4">Convert the following {conversionType === 'decimalToBinary' ? 'decimal to binary' : 'binary to decimal'}:</p>
+              <p className="text-3xl font-bold mb-8">
+                {conversionType === 'decimalToBinary' ? number : number.toString(2).padStart(bits, '0')}
+              </p>
+              <input
+                type="text"
+                value={userInput}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+                className="bg-gray-700 text-white px-4 py-2 rounded-md w-full text-center text-xl"
+                placeholder="Enter your answer"
+              />
+              {feedback !== 'Nice!' && <p className="mt-4 text-xl text-red-500">{feedback}</p>}
+            </div>
+          )}
         </div>
-        {!isGameActive ? (
-          <button
-            onClick={startGame}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md"
-          >
-            Start Game
-          </button>
-        ) : (
-          <>
-            <p className="mb-4">Time remaining: {timer} seconds</p>
-            <p className="mb-4">Convert the following {conversionType === 'decimalToBinary' ? 'decimal to binary' : 'binary to decimal'}:</p>
-            <p className="text-2xl font-bold mb-4">
-              {conversionType === 'decimalToBinary' ? number : number.toString(2).padStart(bits, '0')}
-            </p>
-            <input
-              type="text"
-              value={userInput}
-              onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
-              className="bg-gray-700 text-white px-4 py-2 rounded-md mr-2"
-              placeholder="Enter your answer"
-            />
-            {feedback !== 'Nice!' && <p className="mt-4 text-xl text-red-500">{feedback}</p>}
-          </>
-        )}
       </div>
       {showGameOver && (
         <GameOverModal score={score} onClose={() => setShowGameOver(false)} />
