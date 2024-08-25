@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import BitSelector from '../components/BitSelector';
 import ConversionSelector from '../components/ConversionSelector';
@@ -17,19 +17,24 @@ export default function Home() {
   const [timer, setTimer] = useState<number>(30);
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
   const [showGameOver, setShowGameOver] = useState<boolean>(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const generateNewNumber = useCallback(() => {
     const maxNumber = Math.pow(2, bits) - 1;
-    const newNumber = Math.floor(Math.random() * (maxNumber + 1));
+    let newNumber;
+    do {
+      newNumber = Math.floor(Math.random() * (maxNumber + 1));
+    } while (newNumber === number);
     setNumber(newNumber);
     setUserInput('');
     setFeedback('');
-  }, [bits]);
+  }, [bits, number]);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
     if (isGameActive) {
       const endTime = Date.now() + timer * 1000;
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
         setTimer(remaining);
         if (remaining <= 0) {
@@ -38,15 +43,18 @@ export default function Home() {
           setShowGameOver(true);
         }
       }, 100);
-      return () => clearInterval(interval);
     }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isGameActive, timer]);
 
   const startGame = () => {
     setIsGameActive(true);
     setScore(0);
-    setTimer(timer); // Reset timer to initial value
+    setTimer(timer);
     generateNewNumber();
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,46 +83,52 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-900 text-gray-100 flex flex-col">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
-        <h1 className="text-3xl font-bold mb-8">Binary-Decimal Conversion Practice</h1>
-        <div className="w-full max-w-md">
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex space-x-4">
-              <BitSelector bits={bits} onBitsChange={setBits} />
-              <ConversionSelector conversionType={conversionType} onConversionTypeChange={setConversionType} />
-              <TimerSelector timer={timer} onTimerChange={setTimer} />
-            </div>
-          </div>
-          <div className="text-xl mb-8 text-center">
-            Score: {score} {feedback === 'Nice!' && <span className="text-green-500 ml-2">{feedback}</span>}
-          </div>
-          {!isGameActive ? (
-            <div className="text-center">
-              <button
-                onClick={startGame}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg"
-              >
-                Start Game
-              </button>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="mb-4">Time remaining: {timer} seconds</p>
-              <p className="mb-4">Convert the following {conversionType === 'decimalToBinary' ? 'decimal to binary' : 'binary to decimal'}:</p>
-              <p className="text-3xl font-bold mb-8">
-                {conversionType === 'decimalToBinary' ? number : number.toString(2).padStart(bits, '0')}
-              </p>
+      <div className="container mx-auto px-4 py-8 flex-grow flex flex-col items-center">
+        <h1 className="text-4xl font-bold mb-4">Binary Blitz</h1>
+        <p className="text-xl mb-8">
+          Test your binary and decimal conversion skills in this fast-paced challenge. Can you keep up with the clock?
+        </p>
+        {!isGameActive ? (
+          <button
+            onClick={startGame}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md text-lg mb-8"
+          >
+            Start Game
+          </button>
+        ) : (
+          <div className="w-full max-w-2xl bg-gray-800 p-8 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold mb-4">Conversion Challenge</h2>
+            <p className="text-3xl font-bold mb-6">
+              {conversionType === 'decimalToBinary' ? number : number.toString(2).padStart(bits, '0')}
+            </p>
+            <div className="flex items-center mb-4">
               <input
+                ref={inputRef}
                 type="text"
                 value={userInput}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
-                className="bg-gray-700 text-white px-4 py-2 rounded-md w-full text-center text-xl"
-                placeholder="Enter your answer"
+                className="bg-gray-700 text-white px-4 py-2 rounded-l-md w-full text-xl"
+                placeholder={`Enter ${conversionType === 'decimalToBinary' ? 'binary' : 'decimal'}`}
               />
-              {feedback !== 'Nice!' && <p className="mt-4 text-xl text-red-500">{feedback}</p>}
+              <button
+                onClick={checkAnswer}
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-r-md text-xl"
+              >
+                Submit
+              </button>
             </div>
-          )}
+            <p className="text-lg">Time remaining: {timer} seconds</p>
+            {feedback !== 'Nice!' && <p className="mt-4 text-xl text-red-500">{feedback}</p>}
+          </div>
+        )}
+        <div className="mt-8 flex space-x-4">
+          <BitSelector bits={bits} onBitsChange={setBits} />
+          <ConversionSelector conversionType={conversionType} onConversionTypeChange={setConversionType} />
+          <TimerSelector timer={timer} onTimerChange={setTimer} />
+        </div>
+        <div className="mt-8 text-2xl">
+          Score: {score}
         </div>
       </div>
       {showGameOver && (

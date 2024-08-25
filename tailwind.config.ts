@@ -53,6 +53,14 @@ const config = {
           foreground: "hsl(var(--card-foreground))",
         },
         gold: '#FFD700',
+        blue: {
+          500: '#3B82F6',
+          600: '#2563EB',
+        },
+        green: {
+          500: '#10B981',
+          600: '#059669',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
