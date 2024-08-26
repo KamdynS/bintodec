@@ -14,6 +14,10 @@ export default function AboutPage() {
         <p className="text-lg mb-4">
           I started this project for fun because I wanted to learn to recognize binary faster. This is heavily inspired by monkeytype.com. This was a hobby project so have fun, challenge your friends, and go for a high score on the leaderboard.
         </p>
+
+        <p className="text-lg mb-4">
+          If there is anything wrong with the site, or if you just wanna chat, feel free to reach out to me on twitter. My username is <a href="https://x.com/KamdynShaeffer" className="text-blue-500 hover:underline">KamdynShaeffer</a>.
+          </p>
       </main>
     </div>
   );

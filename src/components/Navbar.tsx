@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { Button } from './ui/button'
-import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from 'next/navigation';
+import { UserButton, SignInButton, SignUpButton, useUser } from "@clerk/nextjs";
 
 export default function Navbar() {
-  const { data: session } = useSession()
+  const { isSignedIn, user } = useUser();
   const router = useRouter();
 
   return (
@@ -25,14 +25,21 @@ export default function Navbar() {
           <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4">
             About
           </Link>
-          {!session ? (
-            <Button onClick={() => signIn('github')} variant="outline">Sign in</Button>
+          {!isSignedIn ? (
+            <>
+              <SignInButton mode="modal">
+                <Button variant="outline">Sign in</Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button>Sign up</Button>
+              </SignUpButton>
+            </>
           ) : (
             <>
               <Link href="/profile" className="text-sm font-medium hover:underline underline-offset-4">
                 Profile
               </Link>
-              <Button onClick={() => signOut()} variant="outline">Sign out</Button>
+              <UserButton afterSignOutUrl="/" />
             </>
           )}
         </nav>

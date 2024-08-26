@@ -1,22 +1,23 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { ReactNode } from "react"
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { data: session, status } = useSession()
+  const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
 
   useEffect(() => {
-    if (status === "loading") return // Do nothing while loading
-    if (!session) router.push("/")
-  }, [session, status, router])
+    if (isLoaded && !isSignedIn) {
+      router.push("/")
+    }
+  }, [isLoaded, isSignedIn, router])
 
-  if (status === "loading") {
+  if (!isLoaded || !isSignedIn) {
     return <div>Loading...</div>
   }
 
-  return session ? <>{children}</> : null
+  return <>{children}</>
 }
