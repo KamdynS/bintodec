@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Navbar from '../components/Navbar';
 import GameOverModal from '../components/GameOverModal';
 import { Combobox } from "@/components/ui/combobox";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import GameModeSelector from '../components/GameModeSelector';
 
 export default function Home() {
@@ -23,12 +23,14 @@ export default function Home() {
   const [showGameOver, setShowGameOver] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
   const [gameMode, setGameMode] = useState<'timer' | 'number'>('timer');
   const [targetNumber, setTargetNumber] = useState<number>(5);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [mode, setMode] = useState<'timer' | 'number'>('timer');
 
   const saveScore = useCallback(async () => {
-    if (!isSignedIn) {
+    if (!isSignedIn || !user) {
       console.log('User not signed in, score not saved');
       return;
     }
@@ -40,25 +42,24 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user?.id,
-          username: user?.username, // Make sure this is included
-          score: gameMode === 'timer' ? score : elapsedTime,
+          username: user.username || 'Anonymous',
+          score: mode === 'timer' ? score : elapsedTime,
           gameMode: conversionType,
           bits,
-          timeLimit: gameMode === 'timer' ? timer : targetNumber,
-          mode: gameMode,
+          mode,
+          timeLimit: mode === 'timer' ? timer : undefined,
+          targetNumber: mode === 'number' ? targetNumber : undefined,
         }),
       });
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to save score: ${errorData.error}`);
+        throw new Error('Failed to save score');
       }
       console.log('Score saved successfully');
     } catch (error) {
       console.error('Error saving score:', error);
       alert('Failed to save score. Please try again.');
     }
-  }, [isSignedIn, user, score, conversionType, bits, timer, gameMode, targetNumber, elapsedTime]);
+  }, [isSignedIn, user, score, conversionType, bits, mode, timer, targetNumber, elapsedTime]);
 
   const generateNewNumber = useCallback(() => {
     const maxNumber = Math.pow(2, bits) - 1;

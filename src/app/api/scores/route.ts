@@ -1,52 +1,51 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, query, orderBy, limit, getDocs, Timestamp, where } from 'firebase/firestore';
+import { NextResponse, NextRequest } from 'next/server';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { ScoreEntry } from '@/types';
+import { getAuth } from '@clerk/nextjs/server';
 
-export async function POST(request: Request) {
-  const { userId, username, score, gameMode, bits, timeLimit, mode } = await request.json();
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
 
-  const newScore: Omit<ScoreEntry, 'id'> = {
-    userId,
-    username,
-    score,
-    gameMode,
-    bits,
-    timeLimit,
-    mode,
-    createdAt: Timestamp.now()
-  };
+const db = getFirestore();
+
+export async function POST(request: NextRequest) {
+  const { userId } = await getAuth(request);
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   try {
-    await addDoc(collection(db, 'scores'), newScore);
-    return NextResponse.json({ message: 'Score saved successfully' }, { status: 201 });
+    const { username, score, gameMode, bits, mode, timeLimit, targetNumber } = await request.json();
+
+    const newScore: Omit<ScoreEntry, 'id'> = {
+      userId,
+      username,
+      score,
+      gameMode,
+      bits,
+      mode,
+      createdAt: Timestamp.now()
+    };
+
+    if (mode === 'timer') {
+      newScore.timeLimit = timeLimit;
+    } else if (mode === 'number') {
+      newScore.targetNumber = targetNumber;
+    }
+
+    const docRef = await db.collection('scores').add(newScore);
+    return NextResponse.json({ message: 'Score saved successfully', id: docRef.id }, { status: 201 });
   } catch (error) {
     console.error('Error saving score:', error);
     return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
-  }
-}
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-  const limitParam = searchParams.get('limit') || '10';
-  const limitNumber = parseInt(limitParam, 10);
-
-  try {
-    const scoresRef = collection(db, 'scores');
-    let q = query(scoresRef, orderBy('score', 'desc'), limit(limitNumber));
-    
-    if (userId) {
-      q = query(q, where('userId', '==', userId));
-    }
-
-    const querySnapshot = await getDocs(q);
-    const scores: ScoreEntry[] = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...(doc.data() as ScoreEntry)
-    }));
-    return NextResponse.json(scores);
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch scores' }, { status: 500 });
   }
 }

@@ -5,35 +5,32 @@ import { collection, query, orderBy, limit, getDocs, where } from 'firebase/fire
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const limitParam = searchParams.get('limit') || '20';
-    const limitNumber = parseInt(limitParam, 10);
-    const sortBy = searchParams.get('sortBy') || 'score';
-    const gameMode = searchParams.get('gameMode') || 'all';
-    const bits = searchParams.get('bits') || 'all';
-    const mode = searchParams.get('mode') || 'all';
+    const gameMode = searchParams.get('gameMode');
+    const bits = searchParams.get('bits');
+    const mode = searchParams.get('mode');
+    const timeLimit = searchParams.get('timeLimit');
+    const targetNumber = searchParams.get('targetNumber');
+
+    if (!gameMode || !bits || !mode || (!timeLimit && !targetNumber)) {
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+    }
 
     const scoresRef = collection(db, 'scores');
     let q = query(scoresRef);
 
-    if (sortBy === 'numberTime') {
-      q = query(q, where('mode', '==', 'number'), orderBy('timeLimit', 'asc'));
+    q = query(q, where('gameMode', '==', gameMode));
+    q = query(q, where('bits', '==', parseInt(bits)));
+    q = query(q, where('mode', '==', mode));
+
+    if (mode === 'timer') {
+      q = query(q, where('timeLimit', '==', parseInt(timeLimit!)));
+      q = query(q, orderBy('score', 'desc'));
     } else {
-      q = query(q, where('mode', '==', 'timer'), orderBy('score', 'desc'));
+      q = query(q, where('targetNumber', '==', parseInt(targetNumber!)));
+      q = query(q, orderBy('score', 'asc'));
     }
 
-    if (gameMode !== 'all') {
-      q = query(q, where('gameMode', '==', gameMode));
-    }
-
-    if (bits !== 'all') {
-      q = query(q, where('bits', '==', parseInt(bits)));
-    }
-
-    if (mode !== 'all') {
-      q = query(q, where('mode', '==', mode));
-    }
-
-    q = query(q, limit(limitNumber));
+    q = query(q, limit(20));
 
     const querySnapshot = await getDocs(q);
     const scores = querySnapshot.docs.map(doc => ({

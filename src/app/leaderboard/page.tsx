@@ -1,34 +1,43 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import Navbar from '@/components/Navbar';
-import { ScoreEntry } from '@/types';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Combobox } from "@/components/ui/combobox";
+import { ScoreEntry } from '@/types';
+import Navbar from '../../components/Navbar';
 
-type ScoreEntryWithId = ScoreEntry & { id: string | number };
-
-export default function LeaderboardPage() {
-  const [scores, setScores] = useState<ScoreEntryWithId[]>([]);
+export default function Leaderboard() {
+  const [scores, setScores] = useState<ScoreEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState('timerScore');
-  const [gameMode, setGameMode] = useState('all');
-  const [bits, setBits] = useState('all');
+  const [gameMode, setGameMode] = useState<string>('decimalToBinary');
+  const [bits, setBits] = useState<string>('8');
+  const [mode, setMode] = useState<string>('timer');
+  const [timeOrTarget, setTimeOrTarget] = useState<string>('60');
 
   const fetchScores = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await fetch(`/api/leaderboard?limit=20&sortBy=${sortBy}&gameMode=${gameMode}&bits=${bits}`);
-      if (!response.ok) throw new Error('Failed to fetch scores');
+      let url = `/api/leaderboard?gameMode=${gameMode}&bits=${bits}&mode=${mode}`;
+      if (mode === 'timer') {
+        url += `&timeLimit=${timeOrTarget}`;
+      } else {
+        url += `&targetNumber=${timeOrTarget}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch scores');
+      }
       const data: ScoreEntry[] = await response.json();
-      setScores(data.map((score, index) => ({ ...score, id: index })));
+      setScores(data);
     } catch (error) {
       console.error('Error fetching scores:', error);
-      setError('Failed to load leaderboard. Please try again later.');
+      setError('Failed to load scores. Please try again later.');
     } finally {
       setIsLoading(false);
     }
-  }, [sortBy, gameMode, bits]);
+  }, [gameMode, bits, mode, timeOrTarget]);
 
   useEffect(() => {
     fetchScores();
@@ -39,18 +48,10 @@ export default function LeaderboardPage() {
       <Navbar />
       <main className="flex-1 container max-w-5xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-6">Leaderboard</h1>
-        <div className="flex justify-center space-x-4 mb-8">
+        
+        <div className="flex flex-wrap gap-4 mb-6">
           <Combobox
             options={[
-              { value: "timerScore", label: "Timer Mode (Highest Score)" },
-              { value: "numberTime", label: "Number Mode (Fastest Time)" },
-            ]}
-            value={sortBy}
-            onChange={(value) => setSortBy(value)}
-          />
-          <Combobox
-            options={[
-              { value: "all", label: "All Modes" },
               { value: "decimalToBinary", label: "Decimal to Binary" },
               { value: "binaryToDecimal", label: "Binary to Decimal" },
             ]}
@@ -59,7 +60,6 @@ export default function LeaderboardPage() {
           />
           <Combobox
             options={[
-              { value: "all", label: "All Bits" },
               { value: "4", label: "4 bits" },
               { value: "8", label: "8 bits" },
               { value: "16", label: "16 bits" },
@@ -68,32 +68,73 @@ export default function LeaderboardPage() {
             value={bits}
             onChange={(value) => setBits(value)}
           />
+          <Combobox
+            options={[
+              { value: "timer", label: "Timer Mode" },
+              { value: "number", label: "Number Mode" },
+            ]}
+            value={mode}
+            onChange={(value) => {
+              setMode(value);
+              setTimeOrTarget(value === 'timer' ? '60' : '10');
+            }}
+          />
+          {mode === 'timer' && (
+            <Combobox
+              options={[
+                { value: "30", label: "30 seconds" },
+                { value: "60", label: "1 minute" },
+                { value: "120", label: "2 minutes" },
+                { value: "300", label: "5 minutes" },
+              ]}
+              value={timeOrTarget}
+              onChange={(value) => setTimeOrTarget(value)}
+            />
+          )}
+          {mode === 'number' && (
+            <Combobox
+              options={[
+                { value: "5", label: "5 correct guesses" },
+                { value: "10", label: "10 correct guesses" },
+                { value: "20", label: "20 correct guesses" },
+              ]}
+              value={timeOrTarget}
+              onChange={(value) => setTimeOrTarget(value)}
+            />
+          )}
         </div>
-        {isLoading ? (
-          <p>Loading leaderboard...</p>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : (
-          <div className="grid gap-2">
-            {scores.map((score, index) => (
-              <div key={score.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 bg-muted rounded-lg p-4">
-                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center font-bold">
-                  {index + 1}
-                </div>
-                <div>
-                  <div className="font-medium">{score.username}</div>
-                  <div className="text-muted-foreground text-sm">
-                    Mode: {score.gameMode} | Bits: {score.bits}
-                  </div>
-                </div>
-                <div className="font-medium">
-                  {sortBy === 'timerScore' 
-                    ? `Score: ${score.score}`
-                    : `Time: ${score.timeLimit.toFixed(1)}s`
-                  }
-                </div>
-              </div>
-            ))}
+
+        {isLoading && <div>Loading scores...</div>}
+        {error && <div className="text-red-500">{error}</div>}
+        {!isLoading && !error && (
+          <div className="bg-muted rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">Top Scores</h2>
+            {scores.length === 0 ? (
+              <p>No scores found for the selected filters.</p>
+            ) : (
+              <ul className="space-y-4">
+                {scores.map((score, index) => (
+                  <li key={score.id} className="bg-background rounded-lg p-4 shadow">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{index + 1}. {score.username}</span>
+                      <span className="font-bold">
+                        {mode === 'timer' 
+                          ? `${score.score} correct`
+                          : `${score.score.toFixed(1)}s`
+                        }
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {gameMode} | {bits} bits | 
+                      {mode === 'timer' 
+                        ? `${timeOrTarget}s time limit`
+                        : `${timeOrTarget} correct guesses`
+                      }
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </main>
