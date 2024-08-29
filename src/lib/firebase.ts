@@ -21,23 +21,9 @@ export const useFirebaseAuth = () => {
 
   const signIn = async () => {
     try {
-      const token = await getToken();
+      const token = await getToken({ template: 'firebase' });
       if (token) {
-        // Call the getFirebaseToken API to ensure the user is created in Firestore
-        const response = await fetch('/api/getFirebaseToken', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to get Firebase token');
-        }
-        
-        // The user is now created in Firestore if they didn't exist before
-        console.log('User checked/created in Firestore');
+        await signInWithCustomToken(auth, token);
       }
     } catch (error) {
       console.error('Error signing in to Firebase:', error);

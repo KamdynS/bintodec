@@ -10,6 +10,9 @@ import GameOverModal from '../components/GameOverModal';
 import { Combobox } from "@/components/ui/combobox";
 import { useUser, useAuth } from "@clerk/nextjs";
 import GameModeSelector from '../components/GameModeSelector';
+import { useFirebaseAuth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 export default function Home() {
   const [number, setNumber] = useState<number>(0);
@@ -24,10 +27,17 @@ export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
+  const { signIn } = useFirebaseAuth();
   const [gameMode, setGameMode] = useState<'timer' | 'number'>('timer');
   const [targetNumber, setTargetNumber] = useState<number>(5);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [mode, setMode] = useState<'timer' | 'number'>('timer');
+
+  useEffect(() => {
+    if (isSignedIn) {
+      signIn();
+    }
+  }, [isSignedIn, signIn]);
 
   const saveScore = useCallback(async () => {
     if (!isSignedIn || !user) {
@@ -36,25 +46,20 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch('/api/scores', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: user.username || 'Anonymous',
-          score: mode === 'timer' ? score : elapsedTime,
-          gameMode: conversionType,
-          bits,
-          mode,
-          timeLimit: mode === 'timer' ? timer : undefined,
-          targetNumber: mode === 'number' ? targetNumber : undefined,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save score');
-      }
-      console.log('Score saved successfully');
+      const scoreData = {
+        userId: user.id,
+        username: user.username || 'Anonymous',
+        score: mode === 'timer' ? score : elapsedTime,
+        gameMode: conversionType,
+        bits,
+        mode,
+        timeLimit: mode === 'timer' ? timer : undefined,
+        targetNumber: mode === 'number' ? targetNumber : undefined,
+        createdAt: new Date()
+      };
+
+      const docRef = await addDoc(collection(db, 'scores'), scoreData);
+      console.log('Score saved successfully with ID:', docRef.id);
     } catch (error) {
       console.error('Error saving score:', error);
       alert('Failed to save score. Please try again.');
