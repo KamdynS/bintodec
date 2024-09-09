@@ -39,6 +39,6 @@ export async function getLeaderboardScores(
     return scores;
   } catch (error) {
     console.error('Error fetching leaderboard scores:', error);
-    return [];
+    throw error; // Propagate the error instead of returning an empty array
   }
 }
