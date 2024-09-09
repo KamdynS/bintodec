@@ -9,7 +9,7 @@ export default function LeaderboardClient({ initialScores }: { initialScores: Sc
   const [gameMode, setGameMode] = useState<'decimalToBinary' | 'binaryToDecimal'>('decimalToBinary');
   const [bits, setBits] = useState<string>('8');
   const [mode, setMode] = useState<'timer' | 'number'>('timer');
-  const [timeOrTarget, setTimeOrTarget] = useState<string>('60');
+  const [timeOrTarget, setTimeOrTarget] = useState<string>('2'); // Default to 1 minute (value 2)
   const [scores, setScores] = useState<ScoreEntry[]>(initialScores);
   const router = useRouter();
 
@@ -66,10 +66,10 @@ export default function LeaderboardClient({ initialScores }: { initialScores: Sc
         {mode === 'timer' && (
           <Combobox
             options={[
-              { value: "30", label: "30 seconds" },
-              { value: "60", label: "1 minute" },
-              { value: "120", label: "2 minutes" },
-              { value: "300", label: "5 minutes" },
+              { value: "1", label: "30 seconds" },
+              { value: "2", label: "1 minute" },
+              { value: "3", label: "2 minutes" },
+              { value: "4", label: "5 minutes" },
             ]}
             value={timeOrTarget}
             onChange={(value) => setTimeOrTarget(value)}
@@ -109,7 +109,7 @@ export default function LeaderboardClient({ initialScores }: { initialScores: Sc
                 <div className="text-sm text-muted-foreground mt-1">
                   {score.gameMode} | {score.bits} bits | 
                   {score.mode === 'timer' 
-                    ? `${score.timeLimit}s time limit`
+                    ? `${getTimeLimitLabel(score.timeLimit)} time limit`
                     : `${score.targetNumber} correct guesses`
                   }
                 </div>
@@ -120,4 +120,15 @@ export default function LeaderboardClient({ initialScores }: { initialScores: Sc
       </div>
     </div>
   );
+}
+
+// Add this helper function at the end of the file
+function getTimeLimitLabel(timeLimit: number | undefined): string {
+  switch (timeLimit) {
+    case 1: return "30s";
+    case 2: return "1m";
+    case 3: return "2m";
+    case 4: return "5m";
+    default: return "Unknown";
+  }
 }

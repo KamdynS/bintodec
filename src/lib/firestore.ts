@@ -8,7 +8,8 @@ export async function getLeaderboardScores(
   mode: 'timer' | 'number',
   timeOrTarget: number
 ): Promise<ScoreEntry[]> {
-  const scoresRef = collection(db, 'scores');
+  const firestore = await db();
+  const scoresRef = collection(firestore, 'scores');
   let q = query(scoresRef);
 
   q = query(q, where('gameMode', '==', gameMode));

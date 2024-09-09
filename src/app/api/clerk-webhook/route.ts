@@ -93,8 +93,4 @@ export async function POST(req: Request) {
   return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = 'force-dynamic'

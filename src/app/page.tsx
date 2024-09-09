@@ -28,21 +28,34 @@ export default function Home() {
   const [targetNumber, setTargetNumber] = useState<number>(5);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [mode, setMode] = useState<'timer' | 'number'>('timer');
+  const [isFirebaseSignedIn, setIsFirebaseSignedIn] = useState<boolean>(false);
+  const [timerOption, setTimerOption] = useState<string>("2"); // Default to 1 minute
 
   useEffect(() => {
     const attemptSignIn = async () => {
+      // Check if we've already signed in during this session
+      const firebaseSignedIn = localStorage.getItem('firebaseSignedIn');
+      
+      if (firebaseSignedIn === 'true') {
+        setIsFirebaseSignedIn(true);
+        return;
+      }
+
       try {
         await signInWithFirebase();
+        setIsFirebaseSignedIn(true);
+        localStorage.setItem('firebaseSignedIn', 'true');
+        console.log('Successfully signed in to Firebase');
       } catch (error) {
         console.error('Failed to sign in to Firebase:', error);
         // Here you can set an error state or show a notification to the user
       }
     };
 
-    if (isSignedIn) {
+    if (isSignedIn && !isFirebaseSignedIn) {
       attemptSignIn();
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, isFirebaseSignedIn]);
 
   const saveScore = useCallback(async () => {
     if (!isSignedIn || !user) {
@@ -51,6 +64,9 @@ export default function Home() {
     }
 
     try {
+      const timerValue = mode === 'timer' ? 
+        (timer === 30 ? 1 : timer === 60 ? 2 : timer === 120 ? 3 : 4) : undefined;
+
       const scoreData = {
         username: user.username || 'Anonymous',
         score: mode === 'timer' ? score : elapsedTime,
@@ -58,7 +74,7 @@ export default function Home() {
         bits,
         mode,
         ...(mode === 'timer' 
-          ? { timeLimit: timer } 
+          ? { timeLimit: timerValue } 
           : { targetNumber: targetNumber }),
       };
 
@@ -190,20 +206,27 @@ export default function Home() {
             />
             <GameModeSelector
               gameMode={gameMode}
-              onGameModeChange={setGameMode}
+              onGameModeChange={(newMode) => {
+                setGameMode(newMode);
+                setMode(newMode);  // Update both gameMode and mode
+              }}
               targetNumber={targetNumber}
               onTargetNumberChange={setTargetNumber}
             />
             {gameMode === 'timer' && (
               <Combobox
                 options={[
-                  { value: "30", label: "30 seconds" },
-                  { value: "60", label: "1 minute" },
-                  { value: "120", label: "2 minutes" },
-                  { value: "300", label: "5 minutes" },
+                  { value: "1", label: "30 seconds" },
+                  { value: "2", label: "1 minute" },
+                  { value: "3", label: "2 minutes" },
+                  { value: "4", label: "5 minutes" },
                 ]}
-                value={timer.toString()}
-                onChange={(value) => setTimer(parseInt(value))}
+                value={timerOption}
+                onChange={(value) => {
+                  setTimerOption(value);
+                  const timerValue = parseInt(value);
+                  setTimer(timerValue === 1 ? 30 : timerValue === 2 ? 60 : timerValue === 3 ? 120 : 300);
+                }}
               />
             )}
             <Button onClick={startGame}>Start</Button>
