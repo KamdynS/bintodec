@@ -8,11 +8,9 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Navbar from '../components/Navbar';
 import GameOverModal from '../components/GameOverModal';
 import { Combobox } from "@/components/ui/combobox";
-import { useUser, useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import GameModeSelector from '../components/GameModeSelector';
-import { useFirebaseAuth } from '@/lib/firebase';
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { db, signInWithFirebase } from '@/lib/firebase';
 
 export default function Home() {
   const [number, setNumber] = useState<number>(0);
@@ -26,18 +24,25 @@ export default function Home() {
   const [showGameOver, setShowGameOver] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { isSignedIn, user } = useUser();
-  const { getToken } = useAuth();
-  const { signIn } = useFirebaseAuth();
   const [gameMode, setGameMode] = useState<'timer' | 'number'>('timer');
   const [targetNumber, setTargetNumber] = useState<number>(5);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [mode, setMode] = useState<'timer' | 'number'>('timer');
 
   useEffect(() => {
+    const attemptSignIn = async () => {
+      try {
+        await signInWithFirebase();
+      } catch (error) {
+        console.error('Failed to sign in to Firebase:', error);
+        // Here you can set an error state or show a notification to the user
+      }
+    };
+
     if (isSignedIn) {
-      signIn();
+      attemptSignIn();
     }
-  }, [isSignedIn, signIn]);
+  }, [isSignedIn]);
 
   const saveScore = useCallback(async () => {
     if (!isSignedIn || !user) {
@@ -47,24 +52,33 @@ export default function Home() {
 
     try {
       const scoreData = {
-        userId: user.id,
         username: user.username || 'Anonymous',
         score: mode === 'timer' ? score : elapsedTime,
         gameMode: conversionType,
         bits,
         mode,
-        timeLimit: mode === 'timer' ? timer : undefined,
-        targetNumber: mode === 'number' ? targetNumber : undefined,
-        createdAt: new Date()
+        ...(mode === 'timer' 
+          ? { timeLimit: timer } 
+          : { targetNumber: targetNumber }),
       };
 
-      const docRef = await addDoc(collection(db, 'scores'), scoreData);
-      console.log('Score saved successfully with ID:', docRef.id);
+      const response = await fetch('/api/scores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(scoreData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save score');
+      }
+
+      console.log('Score saved successfully');
     } catch (error) {
       console.error('Error saving score:', error);
-      alert('Failed to save score. Please try again.');
     }
-  }, [isSignedIn, user, score, conversionType, bits, mode, timer, targetNumber, elapsedTime]);
+  }, [isSignedIn, user, mode, score, elapsedTime, conversionType, bits, timer, targetNumber]);
 
   const generateNewNumber = useCallback(() => {
     const maxNumber = Math.pow(2, bits) - 1;

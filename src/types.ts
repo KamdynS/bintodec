@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export interface ScoreEntry {
   id: string;
@@ -10,5 +10,5 @@ export interface ScoreEntry {
   mode: 'timer' | 'number';
   timeLimit?: number;
   targetNumber?: number;
-  createdAt: Timestamp;
+  createdAt: FieldValue;
 }

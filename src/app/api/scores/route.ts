@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { ScoreEntry } from '@/types';
 import { getAuth } from '@clerk/nextjs/server';
 
@@ -26,14 +26,13 @@ export async function POST(request: NextRequest) {
   try {
     const { username, score, gameMode, bits, mode, timeLimit, targetNumber } = await request.json();
 
-    const newScore: Omit<ScoreEntry, 'id'> = {
+    const newScore: Omit<ScoreEntry, 'id' | 'createdAt'> = {
       userId,
       username,
       score,
       gameMode,
       bits,
       mode,
-      createdAt: Timestamp.now()
     };
 
     if (mode === 'timer') {
@@ -42,7 +41,11 @@ export async function POST(request: NextRequest) {
       newScore.targetNumber = targetNumber;
     }
 
-    const docRef = await db.collection('scores').add(newScore);
+    const docRef = await db.collection('scores').add({
+      ...newScore,
+      createdAt: new Date().toISOString() // Use ISO string instead of FieldValue.serverTimestamp()
+    });
+
     return NextResponse.json({ message: 'Score saved successfully', id: docRef.id }, { status: 201 });
   } catch (error) {
     console.error('Error saving score:', error);

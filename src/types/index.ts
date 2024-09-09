@@ -20,4 +20,15 @@ export interface ScoreData {
   createdAt: Timestamp;
 }
 
-export interface ScoreEntry extends Omit<ScoreData, 'id'> {}
+export interface ScoreEntry {
+  id: string;
+  userId: string;
+  username: string;
+  score: number;
+  gameMode: 'decimalToBinary' | 'binaryToDecimal';
+  bits: number;
+  mode: 'timer' | 'number';
+  timeLimit?: number;
+  targetNumber?: number;
+  createdAt: string;
+}
