@@ -13,9 +13,21 @@ export default function HowToPlayPage() {
           <ul className="list-disc list-inside mb-4">
             <li>Choose between Binary to Decimal or Decimal to Binary conversion</li>
             <li>Select the number of bits (4, 8, 16, or 32)</li>
-            <li>Set your preferred time limit</li>
+            <li>Choose between Timer Mode or Number Mode</li>
+            <li>For Timer Mode, set your preferred time limit</li>
+            <li>For Number Mode, select the target number of correct guesses (5, 10, or 20)</li>
           </ul>
           <p>Once you&apos;ve selected your options, click the &quot;Start&quot; button to begin the game!</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Timer Mode</h2>
+          <p>In Timer Mode, you&apos;ll have a set amount of time to make as many correct conversions as possible. Your score is the number of correct conversions you&apos;ve made at the end of the time limit.</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Number Mode</h2>
+          <p>In Number Mode, you&apos;ll have to reach a certain number of correct conversions within the time limit. Your score is the time it takes you to reach the target number of correct conversions.</p>
         </section>
 
         <section>

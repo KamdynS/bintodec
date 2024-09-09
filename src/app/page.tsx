@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Navbar from '../components/Navbar';
-import BitSelector from '../components/BitSelector';
-import ConversionSelector from '../components/ConversionSelector';
-import TimerSelector from '../components/timerSelector';
 import GameOverModal from '../components/GameOverModal';
 import { Combobox } from "@/components/ui/combobox";
+import { useUser } from "@clerk/nextjs";
+import GameModeSelector from '../components/GameModeSelector';
+import { db, signInWithFirebase } from '@/lib/firebase';
 
 export default function Home() {
   const [number, setNumber] = useState<number>(0);
@@ -23,6 +23,78 @@ export default function Home() {
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
   const [showGameOver, setShowGameOver] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { isSignedIn, user } = useUser();
+  const [gameMode, setGameMode] = useState<'timer' | 'number'>('timer');
+  const [targetNumber, setTargetNumber] = useState<number>(5);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [mode, setMode] = useState<'timer' | 'number'>('timer');
+  const [isFirebaseSignedIn, setIsFirebaseSignedIn] = useState<boolean>(false);
+  const [timerOption, setTimerOption] = useState<string>("2"); // Default to 1 minute
+
+  useEffect(() => {
+    const attemptSignIn = async () => {
+      // Check if we've already signed in during this session
+      const firebaseSignedIn = localStorage.getItem('firebaseSignedIn');
+      
+      if (firebaseSignedIn === 'true') {
+        setIsFirebaseSignedIn(true);
+        return;
+      }
+
+      try {
+        await signInWithFirebase();
+        setIsFirebaseSignedIn(true);
+        localStorage.setItem('firebaseSignedIn', 'true');
+        console.log('Successfully signed in to Firebase');
+      } catch (error) {
+        console.error('Failed to sign in to Firebase:', error);
+        // Here you can set an error state or show a notification to the user
+      }
+    };
+
+    if (isSignedIn && !isFirebaseSignedIn) {
+      attemptSignIn();
+    }
+  }, [isSignedIn, isFirebaseSignedIn]);
+
+  const saveScore = useCallback(async () => {
+    if (!isSignedIn || !user) {
+      console.log('User not signed in, score not saved');
+      return;
+    }
+
+    try {
+      const timerValue = mode === 'timer' ? 
+        (timer === 30 ? 1 : timer === 60 ? 2 : timer === 120 ? 3 : 4) : undefined;
+
+      const scoreData = {
+        username: user.username || 'Anonymous',
+        score: mode === 'timer' ? score : elapsedTime,
+        gameMode: conversionType,
+        bits,
+        mode,
+        ...(mode === 'timer' 
+          ? { timeLimit: timerValue } 
+          : { targetNumber: targetNumber }),
+      };
+
+      const response = await fetch('/api/scores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(scoreData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save score');
+      }
+
+      console.log('Score saved successfully');
+    } catch (error) {
+      console.error('Error saving score:', error);
+    }
+  }, [isSignedIn, user, mode, score, elapsedTime, conversionType, bits, timer, targetNumber]);
 
   const generateNewNumber = useCallback(() => {
     const maxNumber = Math.pow(2, bits) - 1;
@@ -38,26 +110,36 @@ export default function Home() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isGameActive) {
-      const endTime = Date.now() + timer * 1000;
-      interval = setInterval(() => {
-        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-        setTimer(remaining);
-        if (remaining <= 0) {
-          clearInterval(interval);
-          setIsGameActive(false);
-          setShowGameOver(true);
-        }
-      }, 100);
+      if (gameMode === 'timer') {
+        const endTime = Date.now() + timer * 1000;
+        interval = setInterval(() => {
+          const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+          setTimer(remaining);
+          if (remaining <= 0) {
+            clearInterval(interval);
+            setIsGameActive(false);
+            setShowGameOver(true);
+            saveScore();
+          }
+        }, 100);
+      } else {
+        interval = setInterval(() => {
+          setElapsedTime((prevTime) => prevTime + 0.1);
+        }, 100);
+      }
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isGameActive, timer]);
+  }, [isGameActive, timer, gameMode, saveScore]);
 
   const startGame = () => {
     setIsGameActive(true);
     setScore(0);
-    setTimer(timer);
+    setElapsedTime(0);
+    if (gameMode === 'timer') {
+      setTimer(timer);
+    }
     generateNewNumber();
     setFeedback('');
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -81,7 +163,13 @@ export default function Home() {
     if (userInput === correctAnswer.toString()) {
       setScore((prevScore) => prevScore + 1);
       setFeedback('Correct!');
-      generateNewNumber();
+      if (gameMode === 'number' && score + 1 >= targetNumber) {
+        setIsGameActive(false);
+        setShowGameOver(true);
+        saveScore();
+      } else {
+        generateNewNumber();
+      }
       setUserInput('');
     } else {
       setFeedback('Incorrect. Try again!');
@@ -116,16 +204,31 @@ export default function Home() {
               value={bits.toString()}
               onChange={(value) => setBits(parseInt(value))}
             />
-            <Combobox
-              options={[
-                { value: "30", label: "30 seconds" },
-                { value: "60", label: "1 minute" },
-                { value: "120", label: "2 minutes" },
-                { value: "300", label: "5 minutes" },
-              ]}
-              value={timer.toString()}
-              onChange={(value) => setTimer(parseInt(value))}
+            <GameModeSelector
+              gameMode={gameMode}
+              onGameModeChange={(newMode) => {
+                setGameMode(newMode);
+                setMode(newMode);  // Update both gameMode and mode
+              }}
+              targetNumber={targetNumber}
+              onTargetNumberChange={setTargetNumber}
             />
+            {gameMode === 'timer' && (
+              <Combobox
+                options={[
+                  { value: "1", label: "30 seconds" },
+                  { value: "2", label: "1 minute" },
+                  { value: "3", label: "2 minutes" },
+                  { value: "4", label: "5 minutes" },
+                ]}
+                value={timerOption}
+                onChange={(value) => {
+                  setTimerOption(value);
+                  const timerValue = parseInt(value);
+                  setTimer(timerValue === 1 ? 30 : timerValue === 2 ? 60 : timerValue === 3 ? 120 : 300);
+                }}
+              />
+            )}
             <Button onClick={startGame}>Start</Button>
           </div>
         </section>
@@ -134,7 +237,11 @@ export default function Home() {
             <h2 className="text-2xl font-bold tracking-tighter mb-4">Conversion Challenge</h2>
             <div className="flex flex-col items-center justify-center gap-4">
               <div className="text-white mb-2">
-                Time remaining: <span className="font-bold">{timer}</span>s
+                {gameMode === 'timer' ? (
+                  <>Time remaining: <span className="font-bold">{timer}</span>s</>
+                ) : (
+                  <>Time elapsed: <span className="font-bold">{elapsedTime.toFixed(1)}</span>s</>
+                )}
               </div>
               <div className="text-4xl font-bold mb-4">
                 {conversionType === 'decimalToBinary' ? number : number.toString(2).padStart(bits, '0')}
@@ -161,10 +268,15 @@ export default function Home() {
         )}
       </main>
       <footer className="bg-muted p-4 text-center text-sm text-muted-foreground">
-        &copy; 2024 Binary Blitz. All rights reserved.
+        &copy; 2024 Bin to Dec. All rights reserved.
       </footer>
       {showGameOver && (
-        <GameOverModal score={score} onClose={() => setShowGameOver(false)} />
+        <GameOverModal 
+          score={score} 
+          onClose={() => setShowGameOver(false)} 
+          gameMode={gameMode}
+          elapsedTime={elapsedTime}
+        />
       )}
     </div>
   );
