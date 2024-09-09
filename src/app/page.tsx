@@ -78,6 +78,8 @@ export default function Home() {
           : { targetNumber: targetNumber }),
       };
 
+      console.log('Sending score data:', scoreData);
+
       const response = await fetch('/api/scores', {
         method: 'POST',
         headers: {
@@ -86,13 +88,16 @@ export default function Home() {
         body: JSON.stringify(scoreData),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to save score');
+        throw new Error(`Failed to save score: ${responseData.error || response.statusText}`);
       }
 
-      console.log('Score saved successfully');
+      console.log('Score saved successfully:', responseData);
     } catch (error) {
       console.error('Error saving score:', error);
+      // You might want to show an error message to the user here
     }
   }, [isSignedIn, user, mode, score, elapsedTime, conversionType, bits, timer, targetNumber]);
 
