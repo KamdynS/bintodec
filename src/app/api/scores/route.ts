@@ -4,7 +4,6 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { ScoreEntry } from '@/types';
 import { getAuth } from '@clerk/nextjs/server';
 import { setCorsHeaders } from '@/lib/cors';
-import { getLeaderboardScores } from '@/lib/firestore';
 
 if (!getApps().length) {
   initializeApp({

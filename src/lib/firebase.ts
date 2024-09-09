@@ -5,10 +5,12 @@ import { FirebaseApp } from 'firebase/app';
 
 let app: FirebaseApp | undefined;
 
+const DOMAIN = 'https://bintodec.com';
+
 export const initializeFirebase = async () => {
   if (!app) {
     try {
-      const response = await fetch('/api/firebase-config', {
+      const response = await fetch(`${DOMAIN}/api/firebase-config`, {
         credentials: 'same-origin',
       });
       if (!response.ok) {
