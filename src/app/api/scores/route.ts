@@ -3,7 +3,7 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ScoreEntry } from '@/types';
 import { getAuth } from '@clerk/nextjs/server';
-import { cors } from '@/lib/cors';
+import { setCorsHeaders } from '@/lib/cors';
 
 if (!getApps().length) {
   initializeApp({
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   if (!userId) {
     const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    cors(request as any, response as any);
+    setCorsHeaders(response);
     return response;
   }
 
@@ -46,22 +46,22 @@ export async function POST(request: NextRequest) {
 
     const docRef = await db.collection('scores').add({
       ...newScore,
-      createdAt: new Date().toISOString() // Use ISO string instead of FieldValue.serverTimestamp()
+      createdAt: new Date().toISOString()
     });
 
     const response = NextResponse.json({ message: 'Score saved successfully', id: docRef.id }, { status: 201 });
-    cors(request as any, response as any);
+    setCorsHeaders(response);
     return response;
   } catch (error) {
     console.error('Error saving score:', error);
     const response = NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
-    cors(request as any, response as any);
+    setCorsHeaders(response);
     return response;
   }
 }
 
-export async function OPTIONS(req: NextRequest) {
+export async function OPTIONS(request: NextRequest) {
   const response = new NextResponse(null, { status: 200 });
-  cors(req as any, response as any);
+  setCorsHeaders(response);
   return response;
 }

@@ -4,7 +4,7 @@ import { WebhookEvent } from '@clerk/nextjs/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { headers } from 'next/headers';
-import { cors } from '@/lib/cors';
+import { setCorsHeaders } from '@/lib/cors';
 
 if (!getApps().length) {
   initializeApp({
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
     const response = NextResponse.json({ error: 'Error occurred -- no svix headers' }, { status: 400 });
-    cors(req as any, response as any);
+    setCorsHeaders(response);
     return response;
   }
 
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('Error verifying webhook:', err);
     const response = NextResponse.json({ error: 'Error occurred' }, { status: 400 });
-    cors(req as any, response as any);
+    setCorsHeaders(response);
     return response;
   }
 
@@ -87,25 +87,25 @@ export async function POST(req: NextRequest) {
       }
 
       const response = NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
-      cors(req as any, response as any);
+      setCorsHeaders(response);
       return response;
     } catch (error) {
       console.error('Error handling user in Firestore:', error);
       const response = NextResponse.json({ error: 'Error handling user in Firestore' }, { status: 500 });
-      cors(req as any, response as any);
+      setCorsHeaders(response);
       return response;
     }
   } else {
     console.log(`Unhandled webhook type: ${evt.type}`);
     const response = NextResponse.json({ message: 'Webhook received' }, { status: 200 });
-    cors(req as any, response as any);
+    setCorsHeaders(response);
     return response;
   }
 }
 
 export async function OPTIONS(req: NextRequest) {
   const response = new NextResponse(null, { status: 200 });
-  cors(req as any, response as any);
+  setCorsHeaders(response);
   return response;
 }
 

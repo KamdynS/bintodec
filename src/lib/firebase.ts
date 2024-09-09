@@ -7,10 +7,9 @@ let app: FirebaseApp | undefined;
 
 export const initializeFirebase = async () => {
   if (!app) {
-    const host = process.env.NEXT_PUBLIC_WEBSITE_URL || process.env.VERCEL_URL || 'http://localhost:3000';
     try {
-      const response = await fetch(`${host}/api/firebase-config`, {
-        credentials: 'include',
+      const response = await fetch('/api/firebase-config', {
+        credentials: 'same-origin',
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -19,7 +18,7 @@ export const initializeFirebase = async () => {
       app = initializeApp(config);
     } catch (error) {
       console.error('Error fetching Firebase config:', error);
-      // You might want to add some fallback behavior here
+      throw error;
     }
   }
   return app;
@@ -27,7 +26,6 @@ export const initializeFirebase = async () => {
 
 export const db = async () => {
   const app = await initializeFirebase();
-  if (!app) throw new Error('Firebase app not initialized');
   return getFirestore(app);
 };
 
@@ -38,7 +36,18 @@ export const getFirebaseAuth = async () => {
 
 export const signInWithFirebase = async () => {
   const auth = await getFirebaseAuth();
-  const response = await fetch('/api/auth/firebase');
-  const { token } = await response.json();
-  return signInWithCustomToken(auth, token);
+  try {
+    const response = await fetch('/api/auth/firebase', {
+      method: 'POST',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const { token } = await response.json();
+    return signInWithCustomToken(auth, token);
+  } catch (error) {
+    console.error('Error signing in with Firebase:', error);
+    throw error;
+  }
 };

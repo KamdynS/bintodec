@@ -1,7 +1,7 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { NextResponse } from 'next/server';
 
-export function cors(req: NextApiRequest | Request, res: NextApiResponse | NextResponse) {
+export function setCorsHeaders(res: NextApiResponse | NextResponse) {
   if (res instanceof NextResponse) {
     res.headers.set('Access-Control-Allow-Credentials', 'true');
     res.headers.set('Access-Control-Allow-Origin', '*');
@@ -19,15 +19,4 @@ export function cors(req: NextApiRequest | Request, res: NextApiResponse | NextR
       'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
     );
   }
-
-  if (req.method === 'OPTIONS') {
-    if (res instanceof NextResponse) {
-      return new NextResponse(null, { status: 200 });
-    } else {
-      res.status(200).end();
-      return true;
-    }
-  }
-
-  return false;
 }
