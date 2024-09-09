@@ -6,9 +6,11 @@ import { setCorsHeaders } from '@/lib/cors';
 
 if (!getApps().length) {
   try {
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY
-      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-      : undefined;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    if (!privateKey) {
+      throw new Error('FIREBASE_PRIVATE_KEY is not set');
+    }
 
     initializeApp({
       credential: cert({
@@ -20,6 +22,7 @@ if (!getApps().length) {
     console.log('Firebase Admin initialized successfully');
   } catch (error) {
     console.error('Error initializing Firebase Admin:', error);
+    throw error; // This will prevent the app from starting if Firebase init fails
   }
 }
 
@@ -39,13 +42,15 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Error creating custom token:', error);
-    // Log more details about the error
     if (error instanceof Error) {
       console.error('Error name:', error.name);
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
-    const response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const response = NextResponse.json(
+      { error: 'Internal Server Error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
     setCorsHeaders(response);
     return response;
   }
