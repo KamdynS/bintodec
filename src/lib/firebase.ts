@@ -7,9 +7,8 @@ let app: FirebaseApp | undefined;
 
 export const initializeFirebase = async () => {
   if (!app) {
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const host = process.env.VERCEL_URL || 'localhost:3000';
-    const response = await fetch(`${protocol}://${host}/api/firebase-config`);
+    const host = process.env.NEXT_PUBLIC_WEBSITE_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+    const response = await fetch(`${host}/api/firebase-config`);
     const config = await response.json();
     app = initializeApp(config);
   }
