@@ -23,16 +23,19 @@ if (!getApps().length) {
 const db = getFirestore();
 
 export async function POST(request: NextRequest) {
-  const { userId } = await getAuth(request);
-
-  if (!userId) {
-    const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    setCorsHeaders(response);
-    return response;
-  }
-
   try {
+    const { userId } = await getAuth(request);
+
+    if (!userId) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      setCorsHeaders(response);
+      return response;
+    }
+
     const { username, score, gameMode, bits, mode, timeLimit, targetNumber } = await request.json();
+
+    // Log the received data
+    console.log('Received data:', { username, score, gameMode, bits, mode, timeLimit, targetNumber });
 
     const newScore: Omit<ScoreEntry, 'id' | 'createdAt'> = {
       userId,
@@ -49,6 +52,9 @@ export async function POST(request: NextRequest) {
       newScore.targetNumber = targetNumber;
     }
 
+    // Log the newScore object
+    console.log('New score object:', newScore);
+
     const docRef = await db.collection('scores').add({
       ...newScore,
       createdAt: new Date().toISOString()
@@ -58,8 +64,14 @@ export async function POST(request: NextRequest) {
     setCorsHeaders(response);
     return response;
   } catch (error) {
-    console.error('Error saving score:', error);
-    const response = NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
+    console.error('Detailed error:', error);
+    let errorMessage = 'An unknown error occurred';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+    const response = NextResponse.json({ error: 'Failed to save score', details: errorMessage }, { status: 500 });
     setCorsHeaders(response);
     return response;
   }
