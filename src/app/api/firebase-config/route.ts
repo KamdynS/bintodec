@@ -11,12 +11,10 @@ export async function GET(req: NextRequest) {
     appId: process.env.FIREBASE_APP_ID
   });
 
-  cors(req as any, response as any);
+  cors(req, response);
   return response;
 }
 
 export async function OPTIONS(req: NextRequest) {
-  const response = new NextResponse(null, { status: 200 });
-  cors(req as any, response as any);
-  return response;
+  return cors(req, new NextResponse(null, { status: 200 }));
 }

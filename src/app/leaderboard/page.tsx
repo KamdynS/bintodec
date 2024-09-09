@@ -10,7 +10,7 @@ async function getScores(searchParams: { [key: string]: string | string[] | unde
   const gameMode = (searchParams.gameMode as 'decimalToBinary' | 'binaryToDecimal') || 'decimalToBinary';
   const bits = parseInt(searchParams.bits as string || '8');
   const mode = (searchParams.mode as 'timer' | 'number') || 'timer';
-  const timeOrTarget = parseInt(searchParams.timeOrTarget as string || '2'); // Default to 1 minute (value 2)
+  const timeOrTarget = parseInt(searchParams.timeOrTarget as string || '2');
 
   try {
     const scores = await getLeaderboardScores(gameMode, bits, mode, timeOrTarget);

@@ -33,7 +33,7 @@ export async function getLeaderboardScores(
       return {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt // No conversion needed, it's already a string
+        createdAt: data.createdAt.toDate().toISOString() // Convert Firestore Timestamp to ISO string
       } as ScoreEntry;
     });
     return scores;
