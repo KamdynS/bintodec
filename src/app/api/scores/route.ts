@@ -14,7 +14,7 @@ if (!getApps().length) {
   
   if (privateKey) {
     // Remove any surrounding quotes and replace escaped newlines
-    privateKey = privateKey.replace(/\\n/g, '\n').replace(/^"(.*)"$/, '$1');
+    privateKey = privateKey.replace(/\\n/g, '\n').replace(/^["'](.+)["']$/, '$1');
   }
 
   console.log('Initializing Firebase with:', {
@@ -34,6 +34,10 @@ if (!getApps().length) {
     console.log('Firebase initialized successfully');
   } catch (error) {
     console.error('Error initializing Firebase:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     throw error;
   }
 }
@@ -50,18 +54,27 @@ console.log('Environment variables check:', {
 });
 
 export async function POST(request: NextRequest) {
+  console.log('POST request received');
+  
+  if (!db) {
+    console.error('Firestore instance is not initialized');
+    const response = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    setCorsHeaders(response);
+    return response;
+  }
+
   try {
     const { userId } = await getAuth(request);
+    console.log('User ID:', userId);
 
     if (!userId) {
+      console.log('Unauthorized: No user ID');
       const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       setCorsHeaders(response);
       return response;
     }
 
     const { username, score, gameMode, bits, mode, timeLimit, targetNumber } = await request.json();
-
-    // Log the received data
     console.log('Received data:', { username, score, gameMode, bits, mode, timeLimit, targetNumber });
 
     const newScore: Omit<ScoreEntry, 'id' | 'createdAt'> = {
@@ -71,13 +84,8 @@ export async function POST(request: NextRequest) {
       gameMode,
       bits,
       mode,
+      ...(mode === 'timer' ? { timeLimit } : { targetNumber }),
     };
-
-    if (mode === 'timer') {
-      newScore.timeLimit = timeLimit;
-    } else if (mode === 'number') {
-      newScore.targetNumber = targetNumber;
-    }
 
     // Log the newScore object
     console.log('New score object:', newScore);
