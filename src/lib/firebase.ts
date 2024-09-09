@@ -8,15 +8,26 @@ let app: FirebaseApp | undefined;
 export const initializeFirebase = async () => {
   if (!app) {
     const host = process.env.NEXT_PUBLIC_WEBSITE_URL || process.env.VERCEL_URL || 'http://localhost:3000';
-    const response = await fetch(`${host}/api/firebase-config`);
-    const config = await response.json();
-    app = initializeApp(config);
+    try {
+      const response = await fetch(`${host}/api/firebase-config`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const config = await response.json();
+      app = initializeApp(config);
+    } catch (error) {
+      console.error('Error fetching Firebase config:', error);
+      // You might want to add some fallback behavior here
+    }
   }
   return app;
 };
 
 export const db = async () => {
   const app = await initializeFirebase();
+  if (!app) throw new Error('Firebase app not initialized');
   return getFirestore(app);
 };
 

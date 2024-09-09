@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cors } from '@/lib/cors';
 
 export async function GET(req: NextRequest) {
   const response = NextResponse.json({
@@ -11,12 +10,27 @@ export async function GET(req: NextRequest) {
     appId: process.env.FIREBASE_APP_ID
   });
 
-  cors(req, response);
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
   return response;
 }
 
 export async function OPTIONS(req: NextRequest) {
   const response = new NextResponse(null, { status: 200 });
-  cors(req, response);
+  
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
   return response;
 }
