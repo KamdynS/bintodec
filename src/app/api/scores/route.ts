@@ -1,9 +1,10 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ScoreEntry } from '@/types';
 import { getAuth } from '@clerk/nextjs/server';
 import { setCorsHeaders } from '@/lib/cors';
+import { getLeaderboardScores } from '@/lib/firestore';
 
 if (!getApps().length) {
   initializeApp({
@@ -64,4 +65,20 @@ export async function OPTIONS(request: NextRequest) {
   const response = new NextResponse(null, { status: 200 });
   setCorsHeaders(response);
   return response;
+}
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const gameMode = searchParams.get('gameMode') as 'decimalToBinary' | 'binaryToDecimal' || 'decimalToBinary';
+  const bits = parseInt(searchParams.get('bits') || '8');
+  const mode = searchParams.get('mode') as 'timer' | 'number' || 'timer';
+  const timeOrTarget = parseInt(searchParams.get('timeOrTarget') || '2');
+
+  try {
+    const scores = await getLeaderboardScores(gameMode, bits, mode, timeOrTarget);
+    return NextResponse.json(scores);
+  } catch (error) {
+    console.error('Error in /api/scores:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }
