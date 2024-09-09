@@ -10,9 +10,12 @@ console.log('Current Firebase apps:', getApps());
 
 // Initialize Firebase Admin SDK
 if (!getApps().length) {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined;
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  
+  if (privateKey) {
+    // Remove any surrounding quotes and replace escaped newlines
+    privateKey = privateKey.replace(/\\n/g, '\n').replace(/^"(.*)"$/, '$1');
+  }
 
   console.log('Initializing Firebase with:', {
     projectId: process.env.FIREBASE_PROJECT_ID,
@@ -31,7 +34,7 @@ if (!getApps().length) {
     console.log('Firebase initialized successfully');
   } catch (error) {
     console.error('Error initializing Firebase:', error);
-    throw error; // Re-throw to be caught in the main try-catch
+    throw error;
   }
 }
 
@@ -40,9 +43,10 @@ console.log('Firestore instance created:', !!db);
 
 // Check environment variables
 console.log('Environment variables check:', {
-  FIREBASE_PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
-  FIREBASE_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
-  FIREBASE_PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY
+  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ? 'Set' : 'Not set',
+  FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL ? 'Set' : 'Not set',
+  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ? 'Set' : 'Not set',
+  FIREBASE_PRIVATE_KEY_LENGTH: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.length : 0
 });
 
 export async function POST(request: NextRequest) {
