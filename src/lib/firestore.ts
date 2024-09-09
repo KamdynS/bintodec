@@ -1,4 +1,4 @@
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, Timestamp, FieldValue } from 'firebase/firestore';
 import { db } from './firebase';
 import { ScoreEntry } from '@/types';
 
@@ -33,12 +33,12 @@ export async function getLeaderboardScores(
       return {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt.toDate().toISOString() // Convert Firestore Timestamp to ISO string
+        createdAt: data.createdAt // Keep createdAt as FieldValue
       } as ScoreEntry;
     });
     return scores;
   } catch (error) {
     console.error('Error fetching leaderboard scores:', error);
-    throw error; // Propagate the error instead of returning an empty array
+    throw error;
   }
 }
