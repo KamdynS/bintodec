@@ -66,19 +66,3 @@ export async function OPTIONS(request: NextRequest) {
   setCorsHeaders(response);
   return response;
 }
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const gameMode = searchParams.get('gameMode') as 'decimalToBinary' | 'binaryToDecimal' || 'decimalToBinary';
-  const bits = parseInt(searchParams.get('bits') || '8');
-  const mode = searchParams.get('mode') as 'timer' | 'number' || 'timer';
-  const timeOrTarget = parseInt(searchParams.get('timeOrTarget') || '2');
-
-  try {
-    const scores = await getLeaderboardScores(gameMode, bits, mode, timeOrTarget);
-    return NextResponse.json(scores);
-  } catch (error) {
-    console.error('Error in /api/scores:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}

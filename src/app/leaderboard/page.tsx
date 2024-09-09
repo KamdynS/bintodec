@@ -3,7 +3,6 @@ import { ScoreEntry } from '@/types';
 import Navbar from '../../components/Navbar';
 import LeaderboardClient from './LeaderboardClient';
 import { getLeaderboardScores } from '@/lib/firestore';
-import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,18 +13,7 @@ async function getScores(searchParams: { [key: string]: string | string[] | unde
   const timeOrTarget = parseInt(searchParams.timeOrTarget as string || '2');
 
   try {
-    const headersList = headers();
-    const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const host = headersList.get('host') || '';
-    const baseUrl = `${protocol}://${host}`;
-
-    const apiUrl = `${baseUrl}/api/scores?gameMode=${gameMode}&bits=${bits}&mode=${mode}&timeOrTarget=${timeOrTarget}`;
-    
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return await getLeaderboardScores(gameMode, bits, mode, timeOrTarget);
   } catch (error) {
     console.error('Error fetching scores:', error);
     throw error;
