@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from 'firebase-admin';
+import { adminAuth } from '@/lib/firebaseAdmin';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from '@clerk/nextjs/server';
 import { setCorsHeaders } from '@/lib/cors';
@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const token = await auth().createCustomToken(userId);
+    console.log('Starting custom token creation for userId:', userId);
+    const token = await adminAuth.createCustomToken(userId);
+    console.log('Custom token created successfully');
     const response = NextResponse.json({ token });
     setCorsHeaders(response);
     return response;
