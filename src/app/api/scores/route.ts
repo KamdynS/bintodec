@@ -3,6 +3,7 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ScoreEntry } from '@/types';
 import { getAuth } from '@clerk/nextjs/server';
+import { cors } from '@/lib/cors';
 
 if (!getApps().length) {
   initializeApp({
@@ -20,7 +21,9 @@ export async function POST(request: NextRequest) {
   const { userId } = await getAuth(request);
 
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    cors(request as any, response as any);
+    return response;
   }
 
   try {
@@ -46,9 +49,19 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString() // Use ISO string instead of FieldValue.serverTimestamp()
     });
 
-    return NextResponse.json({ message: 'Score saved successfully', id: docRef.id }, { status: 201 });
+    const response = NextResponse.json({ message: 'Score saved successfully', id: docRef.id }, { status: 201 });
+    cors(request as any, response as any);
+    return response;
   } catch (error) {
     console.error('Error saving score:', error);
-    return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
+    cors(request as any, response as any);
+    return response;
   }
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const response = new NextResponse(null, { status: 200 });
+  cors(req as any, response as any);
+  return response;
 }

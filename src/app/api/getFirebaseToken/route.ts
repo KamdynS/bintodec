@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from 'firebase-admin';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { cors } from '@/lib/cors';
 
 if (!getApps().length) {
   initializeApp({
@@ -12,14 +13,24 @@ if (!getApps().length) {
   });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const { userId } = await request.json();
 
   try {
     const token = await auth().createCustomToken(userId);
-    return NextResponse.json({ token });
+    const response = NextResponse.json({ token });
+    cors(request as any, response as any);
+    return response;
   } catch (error) {
     console.error('Error creating custom token:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    cors(request as any, response as any);
+    return response;
   }
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const response = new NextResponse(null, { status: 200 });
+  cors(req as any, response as any);
+  return response;
 }

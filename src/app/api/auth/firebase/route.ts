@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from 'firebase-admin';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from '@clerk/nextjs/server';
+import { cors } from '@/lib/cors';
 
 if (!getApps().length) {
   console.log('Firebase Project ID:', process.env.FIREBASE_PROJECT_ID);
@@ -26,14 +27,26 @@ export async function POST(request: NextRequest) {
   const { userId } = await getAuth(request);
 
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    cors(request as any, response as any);
+    return response;
   }
 
   try {
     const token = await auth().createCustomToken(userId);
-    return NextResponse.json({ token });
+    const response = NextResponse.json({ token });
+    cors(request as any, response as any);
+    return response;
   } catch (error) {
     console.error('Error creating custom token:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    cors(request as any, response as any);
+    return response;
   }
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const response = new NextResponse(null, { status: 200 });
+  cors(req as any, response as any);
+  return response;
 }

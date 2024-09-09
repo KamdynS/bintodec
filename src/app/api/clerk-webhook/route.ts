@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { Webhook } from 'svix';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { headers } from 'next/headers';
+import { cors } from '@/lib/cors';
 
 if (!getApps().length) {
   initializeApp({
@@ -17,7 +18,7 @@ if (!getApps().length) {
 
 const adminDb = getFirestore();
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
@@ -32,7 +33,9 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return NextResponse.json({ error: 'Error occurred -- no svix headers' }, { status: 400 });
+    const response = NextResponse.json({ error: 'Error occurred -- no svix headers' }, { status: 400 });
+    cors(req as any, response as any);
+    return response;
   }
 
   // Get the body
@@ -51,7 +54,9 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
   } catch (err) {
     console.error('Error verifying webhook:', err);
-    return NextResponse.json({ error: 'Error occurred' }, { status: 400 });
+    const response = NextResponse.json({ error: 'Error occurred' }, { status: 400 });
+    cors(req as any, response as any);
+    return response;
   }
 
   // Handle the webhook event
@@ -80,17 +85,28 @@ export async function POST(req: Request) {
         }, { merge: true });
         console.log('User updated in Firestore');
       }
+
+      const response = NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
+      cors(req as any, response as any);
+      return response;
     } catch (error) {
       console.error('Error handling user in Firestore:', error);
-      return NextResponse.json({ error: 'Error handling user in Firestore' }, { status: 500 });
+      const response = NextResponse.json({ error: 'Error handling user in Firestore' }, { status: 500 });
+      cors(req as any, response as any);
+      return response;
     }
-  }
-  else {
+  } else {
     console.log(`Unhandled webhook type: ${evt.type}`);
-    return NextResponse.json({ message: 'Webhook received' }, { status: 200 });
+    const response = NextResponse.json({ message: 'Webhook received' }, { status: 200 });
+    cors(req as any, response as any);
+    return response;
   }
+}
 
-  return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
+export async function OPTIONS(req: NextRequest) {
+  const response = new NextResponse(null, { status: 200 });
+  cors(req as any, response as any);
+  return response;
 }
 
 export const dynamic = 'force-dynamic'
