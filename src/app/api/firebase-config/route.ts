@@ -16,5 +16,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function OPTIONS(req: NextRequest) {
-  return cors(req, new NextResponse(null, { status: 200 }));
+  const response = new NextResponse(null, { status: 200 });
+  cors(req, response);
+  return response;
 }

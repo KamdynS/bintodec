@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Combobox } from "@/components/ui/combobox";
 import { ScoreEntry } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -13,15 +13,7 @@ export default function LeaderboardClient({ initialScores }: { initialScores: Sc
   const [scores, setScores] = useState<ScoreEntry[]>(initialScores);
   const router = useRouter();
 
-  useEffect(() => {
-    updateLeaderboard();
-  }, [gameMode, bits, mode, timeOrTarget, router]);
-
-  useEffect(() => {
-    setScores(initialScores);
-  }, [initialScores]);
-
-  const updateLeaderboard = () => {
+  const updateLeaderboard = useCallback(async () => {
     const searchParams = new URLSearchParams({
       gameMode,
       bits,
@@ -29,7 +21,15 @@ export default function LeaderboardClient({ initialScores }: { initialScores: Sc
       timeOrTarget,
     });
     router.replace(`/leaderboard?${searchParams.toString()}`, { scroll: false });
-  };
+  }, [gameMode, bits, mode, timeOrTarget]);
+
+  useEffect(() => {
+    updateLeaderboard();
+  }, [updateLeaderboard]);
+
+  useEffect(() => {
+    setScores(initialScores);
+  }, [initialScores]);
 
   return (
     <div>
