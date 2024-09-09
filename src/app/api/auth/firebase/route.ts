@@ -6,11 +6,15 @@ import { setCorsHeaders } from '@/lib/cors';
 
 if (!getApps().length) {
   try {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY
+      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : undefined;
+
     initializeApp({
       credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        privateKey: privateKey,
       }),
     });
     console.log('Firebase Admin initialized successfully');
@@ -35,6 +39,12 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Error creating custom token:', error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     const response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     setCorsHeaders(response);
     return response;
