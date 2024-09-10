@@ -12,7 +12,7 @@ import { useUser } from "@clerk/nextjs";
 import GameModeSelector from '../components/GameModeSelector';
 import { db, signInWithFirebase } from '@/lib/firebase';
 
-const DOMAIN = 'https://bintodec.com';
+const DOMAIN = 'https://www.bintodec.com';
 
 export default function Home() {
   const [number, setNumber] = useState<number>(0);
@@ -87,6 +87,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify(scoreData),
       });
 
