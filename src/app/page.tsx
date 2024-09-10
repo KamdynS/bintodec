@@ -45,9 +45,9 @@ export default function Home() {
         await signInWithFirebase();
         setIsFirebaseSignedIn(true);
         localStorage.setItem('firebaseSignedIn', 'true');
-        console.log('Successfully signed in to Firebase');
+        console.log('Error at line 46 in file page.tsx:', 'Successfully signed in to Firebase');
       } catch (error) {
-        console.error('Failed to sign in to Firebase:', error);
+        console.error('Error at line 48 in file page.tsx:', 'Failed to sign in to Firebase:', error);
         // Here you can set an error state or show a notification to the user
       }
     };
@@ -59,7 +59,7 @@ export default function Home() {
 
   const saveScore = useCallback(async () => {
     if (!isSignedIn || !user) {
-      console.log('User not signed in, score not saved');
+      console.log('Error at line 58 in file page.tsx:', 'User not signed in, score not saved');
       return;
     }
 
@@ -78,7 +78,7 @@ export default function Home() {
           : { targetNumber: targetNumber }),
       };
 
-      console.log('Sending score data:', scoreData);
+      console.log('Error at line 75 in file page.tsx:', 'Sending score data:', scoreData);
 
       const response = await fetch('/api/scores', {
         method: 'POST',
@@ -94,10 +94,12 @@ export default function Home() {
         throw new Error(`Failed to save score: ${responseData.error || response.statusText}`);
       }
 
-      console.log('Score saved successfully:', responseData);
+      console.log('Error at line 90 in file page.tsx:', 'Score saved successfully:', responseData);
     } catch (error) {
-      console.error('Error saving score:', error);
-      // You might want to show an error message to the user here
+      console.error('Error at line 92 in file page.tsx:', 'Error saving score:', error);
+      if (error instanceof Error) {
+        console.error('Error at line 94 in file page.tsx:', 'Error stack:', error.stack);
+      }
     }
   }, [isSignedIn, user, mode, score, elapsedTime, conversionType, bits, timer, targetNumber]);
 
@@ -148,6 +150,7 @@ export default function Home() {
     generateNewNumber();
     setFeedback('');
     setTimeout(() => inputRef.current?.focus(), 0);
+    console.log('Error at line 112 in file page.tsx:', 'Game started');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -172,6 +175,7 @@ export default function Home() {
         setIsGameActive(false);
         setShowGameOver(true);
         saveScore();
+        console.log('Error at line 126 in file page.tsx:', 'Game over, saving score');
       } else {
         generateNewNumber();
       }
@@ -179,6 +183,7 @@ export default function Home() {
     } else {
       setFeedback('Incorrect. Try again!');
     }
+    console.log('Error at line 133 in file page.tsx:', 'Answer checked, feedback:', feedback);
   };
 
   return (
