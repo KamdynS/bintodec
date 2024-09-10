@@ -9,9 +9,7 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware((auth, req) => {
-  console.log('Error at line 10 in file middleware.ts:', 'Middleware called for path:', req.url);
   if (isProtectedRoute(req)) {
-    console.log('Error at line 12 in file middleware.ts:', 'Protected route accessed:', req.url);
     auth().protect();
   }
 });

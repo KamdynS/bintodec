@@ -19,7 +19,6 @@ if (!getApps().length) {
         privateKey: privateKey,
       }),
     });
-    console.log('Firebase Admin initialized successfully');
   } catch (error) {
     console.error('Error initializing Firebase Admin:', error);
     throw error; // This will prevent the app from starting if Firebase init fails
@@ -36,9 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    console.log('Starting custom token creation for userId:', userId);
     const token = await adminAuth.createCustomToken(userId);
-    console.log('Custom token created successfully');
     const response = NextResponse.json({ token });
     setCorsHeaders(response);
     return response;

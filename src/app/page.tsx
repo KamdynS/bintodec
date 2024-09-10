@@ -47,10 +47,8 @@ export default function Home() {
         await signInWithFirebase();
         setIsFirebaseSignedIn(true);
         localStorage.setItem('firebaseSignedIn', 'true');
-        console.log('Error at line 46 in file page.tsx:', 'Successfully signed in to Firebase');
       } catch (error) {
         console.error('Error at line 48 in file page.tsx:', 'Failed to sign in to Firebase:', error);
-        // Here you can set an error state or show a notification to the user
       }
     };
 
@@ -61,7 +59,6 @@ export default function Home() {
 
   const saveScore = useCallback(async () => {
     if (!isSignedIn || !user) {
-      console.log('Error at line 58 in file page.tsx:', 'User not signed in, score not saved');
       return;
     }
 
@@ -80,7 +77,6 @@ export default function Home() {
           : { targetNumber: targetNumber }),
       };
 
-      console.log('Error at line 75 in file page.tsx:', 'Sending score data:', scoreData);
 
       const response = await fetch(`${DOMAIN}/api/scores`, {
         method: 'POST',
@@ -98,7 +94,6 @@ export default function Home() {
       }
 
     } catch (error) {
-      console.error('Error at line 92 in file page.tsx:', 'Error saving score:', error);
       if (error instanceof Error) {
         console.error('Error at line 94 in file page.tsx:', 'Error stack:', error.stack);
       }
@@ -176,7 +171,6 @@ export default function Home() {
         setIsGameActive(false);
         setShowGameOver(true);
         saveScore();
-        console.log('Error at line 126 in file page.tsx:', 'Game over, saving score');
       } else {
         generateNewNumber();
       }
