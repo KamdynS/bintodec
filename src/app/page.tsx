@@ -12,6 +12,8 @@ import { useUser } from "@clerk/nextjs";
 import GameModeSelector from '../components/GameModeSelector';
 import { db, signInWithFirebase } from '@/lib/firebase';
 
+const DOMAIN = 'https://bintodec.com';
+
 export default function Home() {
   const [number, setNumber] = useState<number>(0);
   const [userInput, setUserInput] = useState<string>('');
@@ -80,7 +82,7 @@ export default function Home() {
 
       console.log('Error at line 75 in file page.tsx:', 'Sending score data:', scoreData);
 
-      const response = await fetch('/api/scores', {
+      const response = await fetch(`${DOMAIN}/api/scores`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +96,6 @@ export default function Home() {
         throw new Error(`Failed to save score: ${responseData.error || response.statusText}`);
       }
 
-      console.log('Error at line 90 in file page.tsx:', 'Score saved successfully:', responseData);
     } catch (error) {
       console.error('Error at line 92 in file page.tsx:', 'Error saving score:', error);
       if (error instanceof Error) {
@@ -150,7 +151,6 @@ export default function Home() {
     generateNewNumber();
     setFeedback('');
     setTimeout(() => inputRef.current?.focus(), 0);
-    console.log('Error at line 112 in file page.tsx:', 'Game started');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -183,7 +183,6 @@ export default function Home() {
     } else {
       setFeedback('Incorrect. Try again!');
     }
-    console.log('Error at line 133 in file page.tsx:', 'Answer checked, feedback:', feedback);
   };
 
   return (
